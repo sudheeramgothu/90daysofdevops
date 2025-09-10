@@ -46,15 +46,6 @@ We’ll use Python’s `boto3` SDK to interact with Amazon S3 for file managemen
 
 ---
 
-## ✅ Checklist
-- [ ] Installed boto3 and configured AWS credentials  
-- [ ] Listed S3 buckets with a script  
-- [ ] Created and deleted buckets successfully  
-- [ ] Uploaded and downloaded objects  
-- [ ] Extended functionality with challenge task  
-
----
-
 ## 📌 Commit
 Once complete, commit your progress:
 ```bash
