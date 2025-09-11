@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Pre-push hook: run pytest to ensure tests pass before pushing
+echo "[HOOK] Running pre-push checks..."
+
+if command -v pytest >/dev/null 2>&1; then
+  echo "[HOOK] Running pytest..."
+  pytest
+  if [ $? -ne 0 ]; then
+    echo "[ERROR] Push blocked: Tests failed."
+    exit 1
+  fi
+else
+  echo "[HOOK] pytest not installed, skipping test run."
+fi
+
+echo "[HOOK] Pre-push checks passed."
+exit 0

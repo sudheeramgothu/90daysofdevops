@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Pre-commit hook: check for trailing spaces and Python formatting with black
+echo "[HOOK] Running pre-commit checks..."
+
+# check for trailing whitespace
+if git diff --cached --check | grep "trailing whitespace"; then
+  echo "[ERROR] Commit blocked: Trailing whitespace detected."
+  exit 1
+fi
+
+# run black if available
+if command -v black >/dev/null 2>&1; then
+  files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$' || true)
+  if [ -n "$files" ]; then
+    echo "[HOOK] Checking Python files with black..."
+    black --check $files
+    if [ $? -ne 0 ]; then
+      echo "[ERROR] Commit blocked: Python formatting issues found."
+      exit 1
+    fi
+  fi
+fi
+
+echo "[HOOK] Pre-commit checks passed."
+exit 0
