@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Day 25 — CloudFront + S3 (OAC)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; margin: 2rem; }
+    .tag { display: inline-block; padding: .2rem .6rem; border-radius: .5rem; background: #eef; color: #334; font-weight: 600; margin-right: .5rem; }
+    h1 { margin: .2rem 0; }
+    code { background: #f6f8fa; padding: .2rem .4rem; border-radius: .25rem; }
+    footer { margin-top: 2rem; color: #666; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <div class="tag">Day 25</div>
+  <div class="tag">CloudFront</div>
+  <div class="tag">S3</div>
+  <h1>✅ CloudFront + S3 via OAC</h1>
+  <p>If you can see this, your distribution is serving a private S3 bucket using <strong>Origin Access Control</strong> with HTTPS.</p>
+  <p>Edit this page in <code>day25-cloudfront-static-site/site/index.html</code>, then upload:</p>
+  <pre><code>aws s3 cp site/index.html s3://&lt;your-bucket&gt;/index.html</code></pre>
+  <footer>90 Days of DevOps — Day 25</footer>
+</body>
+</html>
