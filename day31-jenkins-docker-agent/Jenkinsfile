@@ -1,0 +1,48 @@
+pipeline {
+  agent none
+  options { timestamps(); ansiColor('xterm') }
+  stages {
+    stage('Prepare') {
+      agent { label 'docker-agent' }
+      steps {
+        sh 'docker version || true'
+        sh 'aws --version || true'
+        sh 'terraform -version || true'
+        sh 'kubectl version --client || true'
+        sh 'python3 --version || true'
+        sh 'git --version || true'
+      }
+    }
+    stage('Build Image') {
+      agent { label 'docker-agent' }
+      environment { IMAGE = "demo/app"; TAG = "${env.GIT_COMMIT ?: 'local'}" }
+      steps {
+        writeFile file: 'app/Dockerfile', text: 'FROM alpine:3.20\nRUN adduser -D app\nUSER app\nCMD ["sh","-c","echo hello from $HOSTNAME"]\n'
+        sh 'mkdir -p app && echo "{}" > app/.keep && docker build -t ${IMAGE}:${TAG} app && docker images | head -n 5'
+      }
+      post { success { echo "Built ${IMAGE}:${TAG}" } }
+    }
+    stage('(Optional) Push to ECR') {
+      when { expression { return params.PUSH_TO_ECR == true } }
+      agent { label 'docker-agent' }
+      parameters {
+        booleanParam(name: 'PUSH_TO_ECR', defaultValue: false, description: 'Push image to ECR')
+        string(name: 'AWS_REGION', defaultValue: 'us-east-1', description: 'AWS region')
+        string(name: 'ECR_REPO', defaultValue: '123456789012.dkr.ecr.us-east-1.amazonaws.com/demo/app', description: 'Full ECR repo URI')
+      }
+      environment { AWS_REGION = "${params.AWS_REGION}"; ECR_REPO = "${params.ECR_REPO}" }
+      steps {
+        sh 'aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REPO"'
+        sh 'docker tag demo/app:${GIT_COMMIT} "$ECR_REPO:${GIT_COMMIT}"'
+        sh 'docker push "$ECR_REPO:${GIT_COMMIT}"'
+      }
+    }
+    stage('Terraform Validate') {
+      agent { label 'docker-agent' }
+      steps {
+        sh 'mkdir -p tf && cd tf && cat > main.tf <<EOF\nterraform { required_version = \">= 1.5.0\" }\noutput \"hello\" { value = \"jenkins\" }\nEOF\nterraform init -backend=false && terraform validate'
+      }
+    }
+  }
+  post { always { echo "Pipeline finished" } }
+}

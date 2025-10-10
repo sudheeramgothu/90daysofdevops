@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: jenkins-docker-agent
+  labels: { jenkins: agent }
+spec:
+  serviceAccountName: default
+  containers:
+    - name: agent
+      image: devops/jenkins-docker-agent:latest
+      args: ["bash","-lc","/entrypoint.sh"]
+      env:
+        - { name: JENKINS_URL, value: "https://jenkins.example.com/" }
+        - { name: AGENT_NAME, value: "k8s-agent-1" }
+        - { name: AGENT_SECRET, value: "REPLACE" }
+        - { name: AGENT_WORKDIR, value: "/home/jenkins/agent" }
+      resources:
+        requests: { cpu: "250m", memory: "512Mi" }
+        limits:   { cpu: "1",    memory: "1Gi" }
