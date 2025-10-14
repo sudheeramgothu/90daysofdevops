@@ -1,0 +1,107 @@
+
+pipeline {
+  agent { label 'docker-agent' }
+
+  options {
+    timestamps()
+    ansiColor('xterm')
+    buildDiscarder(logRotator(numToKeepStr: '30'))
+    disableConcurrentBuilds()
+    timeout(time: 30, unit: 'MINUTES')
+  }
+
+  environment {
+    APP_NAME   = 'demo-api'
+    REGISTRY   = 'example.com/org'
+    IMAGE_FULL = "${REGISTRY}/${APP_NAME}"
+  }
+
+  triggers {
+    // For multibranch, GitHub webhooks are preferred. This is a fallback.
+    pollSCM('@daily')
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+        sh 'git --no-pager log -1 --pretty=oneline || true'
+      }
+    }
+
+    stage('Quality') {
+      when { not { changeRequest() } } // skip for PRs if you want faster feedback
+      steps {
+        sh 'bash scripts/quality.sh'
+      }
+      post { always { archiveArtifacts artifacts: 'reports/**', allowEmptyArchive: true } }
+    }
+
+    stage('Build') {
+      steps {
+        sh 'bash scripts/build.sh'
+      }
+    }
+
+    stage('Test') {
+      steps {
+        sh 'bash scripts/test.sh'
+      }
+      post {
+        always { junit 'reports/junit/*.xml' }
+      }
+    }
+
+    stage('Package Image (branch)') {
+      when { allOf { not { branch "main" }; not { buildingTag() }; not { changeRequest() } } }
+      environment {
+        SHORTSHA = "${env.GIT_COMMIT.take(7)}"
+      }
+      steps {
+        sh '''
+          docker build -t ${IMAGE_FULL}:${BRANCH_NAME}-${SHORTSHA} .
+          docker image ls | head -n 5
+        '''
+      }
+    }
+
+    stage('Publish & Deploy (main)') {
+      when { branch 'main' }
+      steps {
+        sh '''
+          SHORTSHA=$(echo ${GIT_COMMIT} | cut -c1-7)
+          docker build -t ${IMAGE_FULL}:${SHORTSHA} .
+          echo "Login & push would happen here (ECR/DockerHub)"
+          echo "Deploy to staging/prod would happen here"
+        '''
+      }
+    }
+
+    stage('Release (on tag v*)') {
+      when { buildingTag() }
+      steps {
+        sh '''
+          echo "Release build for tag: ${TAG_NAME}"
+          docker build -t ${IMAGE_FULL}:${TAG_NAME} .
+          echo "Push ${IMAGE_FULL}:${TAG_NAME} and promote to :stable"
+        '''
+      }
+    }
+
+    stage('PR Checks') {
+      when { changeRequest() }
+      steps {
+        sh '''
+          echo "Pull Request #${CHANGE_ID} from ${CHANGE_BRANCH} into ${CHANGE_TARGET}"
+          echo "Run faster checks for PR (lint/unit only)"
+        '''
+      }
+    }
+  }
+
+  post {
+    success { echo "✅ ${env.JOB_NAME} #${env.BUILD_NUMBER} OK (${env.BRANCH_NAME ?: env.TAG_NAME})" }
+    failure { echo "❌ Build failed" }
+    always  { cleanWs() }
+  }
+}
