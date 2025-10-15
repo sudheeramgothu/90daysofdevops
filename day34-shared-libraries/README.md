@@ -1,16 +1,27 @@
-# Day 34 — Shared Libraries
+# Day 34 — Jenkins Shared Libraries
 
 ## 📖 Overview
-Today’s focus: **Shared Libraries**.
+Today’s focus: **Jenkins Shared Libraries** — centralize reusable pipeline steps and keep Jenkinsfiles clean.
 
 ## 🎯 Learning Goals
-- Understand the fundamentals of Shared Libraries.
-- Work through hands-on examples.
+- Structure a Jenkins Global Pipeline Library (`vars/` + optional `src/`).
+- Call library steps via `@Library('devopslib@main')`.
+- Handle **AWS ECR** auth and **Docker build/push** safely.
+- Send **Slack** notifications from a reusable helper.
 
 ## 🛠️ Tasks
-1. Read the lesson notes here.
-2. Run provided examples or write your own scripts/config.
-3. Commit progress with message: `day34: Shared Libraries`.
+1) Publish the library (point Jenkins Global Pipeline Libraries to this path/repo).
+2) Use it in a Jenkinsfile (`Jenkinsfile-example.groovy`).
+3) Run a build and verify the results.
 
 ## 💡 Challenge
-- Extend today’s exercise with an extra feature or edge case.
+- Add a `kubeDeploy()` step to apply a manifest with a Kubeconfig credential.
+- Extend `dockerBuildPush` for multi-arch builds and SBOM export.
+- Add a `withVaultSecret` helper to fetch secrets on demand.
+
+## 📌 Commit
+```bash
+git add day34-jenkins-shared-libraries
+git commit -m "day34: Jenkins Shared Libraries (dockerBuildPush, withECRLogin, slackNotify, hello)"
+git push
+```
