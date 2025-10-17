@@ -1,0 +1,21 @@
+pipeline {
+  agent { label 'docker-agent' }
+  parameters {
+    choice(name: 'ENV', choices: ['dev','staging','prod'], description: 'Terraform workspace')
+    choice(name: 'ACTION', choices: ['plan','apply','destroy'], description: 'Action')
+    booleanParam(name: 'AUTO_APPROVE', defaultValue: false, description: 'Auto-approve apply/destroy')
+    string(name: 'AWS_REGION', defaultValue: 'us-east-1', description: 'Region')
+  }
+  environment { WORKDIR = 'day35-terraform-pipeline/terraform'; REPORTS = 'reports' }
+  stages {
+    stage('Checkout'){ steps{ checkout scm; sh "mkdir -p ${REPORTS}" } }
+    stage('Fmt & Validate'){ steps{ dir(env.WORKDIR){ sh "terraform fmt -check -diff || true; terraform init -backend=false; terraform validate" } } }
+    stage('Security'){ steps{ dir(env.WORKDIR){ sh "docker run --rm -v $(pwd):/tf aquasec/tfsec:latest /tf --format junit > ../${REPORTS}/tfsec.xml || true; docker run --rm -v $(pwd):/tf bridgecrew/checkov:latest -d /tf -o junitxml > ../${REPORTS}/checkov.xml || true" } } post{ always{ junit allowEmptyResults: true, testResults: "${REPORTS}/*.xml"; archiveArtifacts artifacts: "${REPORTS}/*", allowEmptyArchive: true } } }
+    stage('Init'){ steps{ dir(env.WORKDIR){ sh "bash ../scripts/tf_init.sh" } } }
+    stage('Plan'){ when{ anyOf{ expression{ params.ACTION=='plan' }, expression{ params.ACTION=='apply' } } } steps{ dir(env.WORKDIR){ sh "bash ../scripts/tf_plan.sh"; archiveArtifacts artifacts: "tfplan.out", fingerprint: true } } }
+    stage('Approval'){ when{ allOf{ expression{ params.ACTION=='apply' }, not{ expression{ params.AUTO_APPROVE } } } } steps{ input message: "Apply to ${params.ENV}?", ok: "Apply" } }
+    stage('Apply'){ when{ expression{ params.ACTION=='apply' } } steps{ dir(env.WORKDIR){ sh "bash ../scripts/tf_apply.sh" } } }
+    stage('Destroy'){ when{ expression{ params.ACTION=='destroy' } } steps{ dir(env.WORKDIR){ sh "bash ../scripts/tf_destroy.sh" } } }
+  }
+  post { always{ cleanWs() } }
+}
