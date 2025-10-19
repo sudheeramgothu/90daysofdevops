@@ -1,0 +1,6 @@
+apiVersion: v2
+name: myapp
+description: Minimal Helm chart for EKS
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

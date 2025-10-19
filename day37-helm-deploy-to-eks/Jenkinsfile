@@ -1,0 +1,41 @@
+pipeline {
+  agent { label 'docker-agent' }
+  parameters {
+    string(name: 'AWS_REGION',   defaultValue: 'us-east-1', description: 'AWS region')
+    string(name: 'EKS_CLUSTER',  defaultValue: 'dev-eks',   description: 'EKS cluster name')
+    string(name: 'NAMESPACE',    defaultValue: 'demo',      description: 'Kubernetes namespace')
+    string(name: 'RELEASE_NAME', defaultValue: 'myapp',     description: 'Helm release name')
+    string(name: 'IMAGE',        defaultValue: '123456789012.dkr.ecr.us-east-1.amazonaws.com/demo/app', description: 'Image repo')
+    string(name: 'IMAGE_TAG',    defaultValue: 'latest',    description: 'Image tag')
+    booleanParam(name: 'ROLLBACK', defaultValue: false, description: 'Rollback after upgrade')
+  }
+  environment { CHART_DIR = 'day37-helm-deploy-eks/chart/myapp' }
+  stages {
+    stage('Checkout'){ steps{ checkout scm } }
+    stage('Kubecontext'){
+      steps{
+        sh 'aws eks update-kubeconfig --region "${AWS_REGION}" --name "${EKS_CLUSTER}"'
+      }
+    }
+    stage('Helm Lint & Template'){
+      steps{
+        sh 'helm lint "$CHART_DIR" && helm template "$RELEASE_NAME" "$CHART_DIR" --set image.repository="${IMAGE}" --set image.tag="${IMAGE_TAG}" > rendered.yaml'
+      }
+      post{ always{ archiveArtifacts artifacts: 'rendered.yaml', allowEmptyArchive: true } }
+    }
+    stage('Helm Upgrade/Install'){
+      steps{
+        sh 'helm upgrade --install "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" --create-namespace --set image.repository="${IMAGE}" --set image.tag="${IMAGE_TAG}"'
+        sh 'kubectl -n "$NAMESPACE" rollout status deploy/"$RELEASE_NAME" --timeout=120s'
+      }
+    }
+    stage('Rollback'){
+      when{ expression { return params.ROLLBACK } }
+      steps{
+        sh 'helm rollback "$RELEASE_NAME" 1 -n "$NAMESPACE"'
+        sh 'kubectl -n "$NAMESPACE" rollout status deploy/"$RELEASE_NAME" --timeout=120s'
+      }
+    }
+  }
+  post { always { cleanWs() } }
+}
