@@ -1,0 +1,19 @@
+pipeline {
+  agent { label 'docker-agent' }
+  parameters {
+    choice(name: 'TARGET_ENV', choices: ['dev','staging','prod'], description: 'Where to promote')
+    string(name: 'IMAGE', defaultValue: '123456789012.dkr.ecr.us-east-1.amazonaws.com/demo/app', description: 'Image repo URI')
+    string(name: 'CANDIDATE_TAG', defaultValue: 'candidate', description: 'Candidate image tag')
+    booleanParam(name: 'PROMOTE', defaultValue: true, description: 'Retag/push to env tag after approvals')
+  }
+  environment { REPORTS='reports'; TF_DIR='day35-terraform-pipeline/terraform'; K8S_DIR='day38-approval-gates/k8s' }
+  stages {
+    stage('Checkout'){ steps{ checkout scm; sh "mkdir -p ${REPORTS}" } }
+    stage('Security Scans'){ steps{ sh 'bash day38-approval-gates/scripts/quality_tf.sh "${TF_DIR}" "${REPORTS}" || true' }
+      post { always { junit allowEmptyResults: true, testResults: "${REPORTS}/*.xml"; archiveArtifacts artifacts: "${REPORTS}/*", allowEmptyArchive: true } } }
+    stage('Policy-as-Code'){ steps{ sh 'bash day38-approval-gates/scripts/conftest_test.sh "${K8S_DIR}" "day38-approval-gates/policies"' } }
+    stage('Manual Approval'){ when{ anyOf{ expression{ params.TARGET_ENV=="staging" }, expression{ params.TARGET_ENV=="prod" } } } steps{ input message: "Promote ${params.IMAGE}:${params.CANDIDATE_TAG} to ${params.TARGET_ENV}?", ok: "Approve" } }
+    stage('Promote'){ when{ expression{ return params.PROMOTE } } steps{ sh 'bash day38-approval-gates/scripts/promote.sh "${IMAGE}" "${CANDIDATE_TAG}" "${TARGET_ENV}"' } }
+  }
+  post { always { cleanWs() } }
+}
