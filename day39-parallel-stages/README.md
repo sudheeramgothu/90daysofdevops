@@ -1,16 +1,15 @@
 # Day 39 — Parallel Stages
 
 ## 📖 Overview
-Today’s focus: **Parallel Stages**.
+Run lint, unit, integration, and e2e tests in **parallel** in a Jenkins Declarative Pipeline. Publish JUnit, stash/unstash workspace, and optionally guard deploy with a **lock**.
 
 ## 🎯 Learning Goals
-- Understand the fundamentals of Parallel Stages.
-- Work through hands-on examples.
+- Build parallel branches with `parallel {}`
+- Aggregate JUnit across branches
+- Use `stash/unstash` to share files
+- (Optional) Serialize shared env with `lock`
 
-## 🛠️ Tasks
-1. Read the lesson notes here.
-2. Run provided examples or write your own scripts/config.
-3. Commit progress with message: `day39: Parallel Stages`.
-
-## 💡 Challenge
-- Extend today’s exercise with an extra feature or edge case.
+## 📌 Commit
+git add day39-parallel-stages
+git commit -m "day39: Jenkins parallel stages with junit aggregation and optional lock"
+git push

@@ -1,0 +1,25 @@
+pipeline {
+  agent { label 'docker-agent' }
+  parameters { booleanParam(name: 'USE_LOCK', defaultValue: false, description: 'Use lock for shared deploy') }
+  environment { REPORTS = 'day39-parallel-stages/reports/junit' }
+  stages {
+    stage('Checkout'){ steps{ checkout scm; sh 'mkdir -p ${REPORTS}'; stash includes: 'day39-parallel-stages/**', name: 'ws39' } }
+    stage('Parallel QA'){
+      parallel {
+        stage('Lint'){ steps{ unstash 'ws39'; sh 'bash day39-parallel-stages/scripts/lint.sh ${REPORTS}' } post{ always{ junit allowEmptyResults: true, testResults: "${REPORTS}/lint.xml" } } }
+        stage('Unit'){ steps{ unstash 'ws39'; sh 'bash day39-parallel-stages/scripts/unit.sh ${REPORTS}' } post{ always{ junit allowEmptyResults: true, testResults: "${REPORTS}/unit.xml" } } }
+        stage('Integration'){ steps{ unstash 'ws39'; sh 'bash day39-parallel-stages/scripts/integration.sh ${REPORTS}' } post{ always{ junit allowEmptyResults: true, testResults: "${REPORTS}/integration.xml" } } }
+        stage('E2E'){ steps{ unstash 'ws39'; sh 'bash day39-parallel-stages/scripts/e2e.sh ${REPORTS}' } post{ always{ junit allowEmptyResults: true, testResults: "${REPORTS}/e2e.xml" } } }
+      }
+    }
+    stage('Deploy'){
+      steps {
+        script {
+          if (params.USE_LOCK) { lock(resource: 'shared-staging') { sh 'echo deploy with lock; sleep 2' } }
+          else { sh 'echo deploy without lock; sleep 1' }
+        }
+      }
+    }
+  }
+  post { always { cleanWs() } }
+}
