@@ -1,0 +1,12 @@
+pipeline {
+  agent { label 'docker-agent' }
+  parameters { string(name: 'APP_NAME', defaultValue: 'demo-app'); choice(name: 'PACK_FMT', choices: ['tgz','zip']) }
+  environment { DIST_DIR='day40-artifact-archiving/dist'; REPORTS='day40-artifact-archiving/reports' }
+  stages {
+    stage('Checkout'){ steps{ checkout scm; sh 'mkdir -p ${DIST_DIR} ${REPORTS}' } }
+    stage('Build'){ steps{ sh 'bash day40-artifact-archiving/scripts/build.sh "${APP_NAME}" "${PACK_FMT}" "${DIST_DIR}"' } }
+    stage('Checksums'){ steps{ sh 'bash day40-artifact-archiving/scripts/checksums.sh "${DIST_DIR}" "${REPORTS}"' } }
+    stage('Archive'){ steps{ archiveArtifacts artifacts: "${DIST_DIR}/*, ${REPORTS}/*", fingerprint: true } }
+  }
+  post { always { cleanWs() } }
+}
