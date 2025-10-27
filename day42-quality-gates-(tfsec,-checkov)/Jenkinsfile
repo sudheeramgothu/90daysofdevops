@@ -1,0 +1,32 @@
+pipeline {
+  agent { label 'docker-agent' }
+  parameters {
+    string(name: 'TF_DIR', defaultValue: 'day35-terraform-pipeline/terraform')
+    string(name: 'K8S_DIR', defaultValue: 'day38-approval-gates/k8s')
+    booleanParam(name: 'BREAK_ON_HIGH', defaultValue: true)
+  }
+  environment {
+    REPORT_DIR = 'day42-quality-gates/reports'
+    SCRIPTS = 'day42-quality-gates/scripts'
+  }
+  stages {
+    stage('Checkout'){ steps{ checkout scm; sh 'mkdir -p ${REPORT_DIR}' } }
+    stage('Scan Terraform'){
+      steps{ sh 'bash ${SCRIPTS}/scan_tf.sh "${TF_DIR}" "${REPORT_DIR}" "${BREAK_ON_HIGH}"' }
+      post{ always{
+        junit allowEmptyResults: true, testResults: "${REPORT_DIR}/tfsec-junit.xml"
+        junit allowEmptyResults: true, testResults: "${REPORT_DIR}/checkov-tf-junit.xml"
+      }}
+    }
+    stage('Scan Kubernetes'){
+      steps{ sh 'bash ${SCRIPTS}/scan_k8s.sh "${K8S_DIR}" "${REPORT_DIR}" "${BREAK_ON_HIGH}"' }
+      post{ always{
+        junit allowEmptyResults: true, testResults: "${REPORT_DIR}/checkov-k8s-junit.xml"
+      }}
+    }
+    stage('Summarize'){
+      steps{ sh 'bash ${SCRIPTS}/summarize.sh "${REPORT_DIR}" "${BREAK_ON_HIGH}"' }
+    }
+  }
+  post { always{ cleanWs() } }
+}
