@@ -1,0 +1,25 @@
+pipeline {
+  agent { label 'docker-agent' }
+  parameters { choice(name: 'ACTION', choices: ['all','docker-login','kube-whoami','aws-whoami','secrets-scan']) }
+  environment { ROOT='day41-secrets-and-credentials-binding'; SCRIPTS='day41-secrets-and-credentials-binding/scripts' }
+  stages {
+    stage('Checkout'){ steps{ checkout scm } }
+    stage('Docker Login'){
+      when{ anyOf{ expression{ params.ACTION=='all' }, expression{ params.ACTION=='docker-login' } } }
+      steps { withCredentials([usernamePassword(credentialsId:'dockerhub-creds', usernameVariable:'DOCKER_USER', passwordVariable:'DOCKER_PASS')]) { sh 'bash ${SCRIPTS}/docker_login.sh' } }
+    }
+    stage('Kube WhoAmI'){
+      when{ anyOf{ expression{ params.ACTION=='all' }, expression{ params.ACTION=='kube-whoami' } } }
+      steps { withCredentials([file(credentialsId:'kubeconfig-demo', variable:'KUBECONFIG')]) { sh 'bash ${SCRIPTS}/use_kube.sh' } }
+    }
+    stage('AWS WhoAmI'){
+      when{ anyOf{ expression{ params.ACTION=='all' }, expression{ params.ACTION=='aws-whoami' } } }
+      steps { withCredentials([usernamePassword(credentialsId:'aws-creds', usernameVariable:'AWS_ACCESS_KEY_ID', passwordVariable:'AWS_SECRET_ACCESS_KEY')]) { withEnv(['AWS_DEFAULT_REGION=us-east-1']) { sh 'bash ${SCRIPTS}/aws_whoami.sh' } } }
+    }
+    stage('Secrets Scan'){
+      when{ anyOf{ expression{ params.ACTION=='all' }, expression{ params.ACTION=='secrets-scan' } } }
+      steps { withCredentials([string(credentialsId:'slack-token', variable:'SLACK_TOKEN')]) { sh 'bash ${SCRIPTS}/scan_secrets.sh' } }
+    }
+  }
+  post { always { cleanWs() } }
+}
