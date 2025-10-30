@@ -1,0 +1,17 @@
+pipeline {
+  agent any
+  parameters {
+    string(name:'ENV_NAME', defaultValue:'staging')
+    string(name:'ACTION', defaultValue:'deploy')
+    string(name:'IMAGE_TAG', defaultValue:'sha-abc123')
+    string(name:'REQUESTED_BY', defaultValue:'automation-bot')
+    string(name:'SCALE_REPLICAS', defaultValue:'3')
+  }
+  environment { SCRIPTS='day44-webhook-triggers/scripts'; AUDIT='day44-webhook-triggers/audit' }
+  stages {
+    stage('Init'){ steps { sh 'mkdir -p ${AUDIT} && echo init > ${AUDIT}/audit.log' } }
+    stage('Validate'){ steps { sh 'bash ${SCRIPTS}/validate.sh "${ENV_NAME}" "${ACTION}" "${IMAGE_TAG}" "${REQUESTED_BY}" "${SCALE_REPLICAS}" "${AUDIT}/audit.log"' } }
+    stage('Handle'){ steps { sh 'bash ${SCRIPTS}/handle_action.sh "${ENV_NAME}" "${ACTION}" "${IMAGE_TAG}" "${SCALE_REPLICAS}" "${AUDIT}/audit.log"' } }
+    stage('Archive'){ steps { archiveArtifacts artifacts: '${AUDIT}/audit.log', fingerprint: true } }
+  }
+}
