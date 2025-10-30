@@ -1,0 +1,43 @@
+pipeline {
+  agent any
+  parameters {
+    string(name: 'TARGET_URL', defaultValue: 'https://staging.example.com/health')
+    string(name: 'ENV_NAME', defaultValue: 'staging')
+    string(name: 'S3_BUCKET', defaultValue: '')
+    booleanParam(name: 'ALERT_ON_FAILURE', defaultValue: true)
+  }
+  environment {
+    REPORT_DIR = 'day43-nightly-synthetic-tests/reports'
+    SCRIPTS    = 'day43-nightly-synthetic-tests/scripts'
+  }
+  stages {
+    stage('Synthetic Check'){
+      steps {
+        sh 'mkdir -p ${REPORT_DIR}'
+        sh 'bash ${SCRIPTS}/synthetic_check.sh "${TARGET_URL}" "${ENV_NAME}" "${REPORT_DIR}"'
+      }
+    }
+    stage('Archive Report'){
+      steps {
+        archiveArtifacts artifacts: "${REPORT_DIR}/*.json", fingerprint: true
+      }
+    }
+    stage('Upload to S3'){
+      when { expression { return params.S3_BUCKET?.trim() } }
+      steps {
+        withEnv(['AWS_DEFAULT_REGION=us-east-1']) {
+          sh 'bash ${SCRIPTS}/report_to_s3.sh "${REPORT_DIR}" "${ENV_NAME}" "${S3_BUCKET}"'
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+        if (params.ALERT_ON_FAILURE) {
+          sh 'bash ${SCRIPTS}/notify_slack.sh "https://hooks.slack.com/services/demo" "${ENV_NAME}" "${TARGET_URL}"'
+        }
+      }
+    }
+  }
+}
