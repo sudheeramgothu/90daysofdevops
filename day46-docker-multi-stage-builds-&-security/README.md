@@ -1,16 +1,9 @@
-# Day 46 — Docker Multi-stage Builds & Security
+# Day 46 — Docker Multi‑Stage Builds & Image Security
 
-## 📖 Overview
-Today’s focus: **Docker Multi-stage Builds & Security**.
+## Overview
+Production‑grade container build for a small FastAPI service using multi‑stage Dockerfile, non‑root, pinned deps, SBOM (optional), and Trivy scan.
 
-## 🎯 Learning Goals
-- Understand the fundamentals of Docker Multi-stage Builds & Security.
-- Work through hands-on examples.
-
-## 🛠️ Tasks
-1. Read the lesson notes here.
-2. Run provided examples or write your own scripts/config.
-3. Commit progress with message: `day46: Docker Multi-stage Builds & Security`.
-
-## 💡 Challenge
-- Extend today’s exercise with an extra feature or edge case.
+## Quickstart
+docker build -t demo-api:day46 .
+bash scripts/run_container.sh demo-api:day46 8080
+curl -s localhost:8080/health

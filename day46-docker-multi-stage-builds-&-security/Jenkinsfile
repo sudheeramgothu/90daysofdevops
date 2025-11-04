@@ -1,0 +1,16 @@
+pipeline {
+  agent { label 'docker-agent' }
+  options { timestamps(); ansiColor('xterm'); timeout(time: 20, unit: 'MINUTES') }
+  environment { SCRIPTS='day46-docker-multistage-security/scripts' }
+  parameters {
+    string(name:'IMAGE_NAME', defaultValue:'demo-api')
+    string(name:'IMAGE_TAG', defaultValue:'day46')
+  }
+  stages {
+    stage('Checkout'){ steps{ checkout scm; sh 'docker version || true' } }
+    stage('Build'){ steps{ sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} day46-docker-multistage-security' } }
+    stage('Scan'){ steps{ sh 'bash ${SCRIPTS}/trivy_scan.sh "${IMAGE_NAME}:${IMAGE_TAG}"' }
+      post { always { archiveArtifacts artifacts: 'day46-docker-multistage-security/reports/*', allowEmptyArchive: true } }
+    }
+  }
+}
