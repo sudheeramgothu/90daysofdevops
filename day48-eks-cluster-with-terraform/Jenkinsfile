@@ -1,0 +1,13 @@
+pipeline {
+  agent { label "docker-agent" }
+  options { timestamps(); ansiColor("xterm"); timeout(time: 45, unit: "MINUTES") }
+  parameters { choice(name:"ACTION", choices:["plan","apply","destroy"]); string(name:"AWS_REGION", defaultValue:"us-east-1") }
+  environment { TF_IN_AUTOMATION="true" }
+  stages {
+    stage("Checkout"){ steps { checkout scm } }
+    stage("Terraform Init/Plan"){ steps { withEnv(["AWS_DEFAULT_REGION=${params.AWS_REGION}"]) { sh "cd day48-eks-cluster-terraform/infra && terraform init -upgrade && terraform fmt -recursive && terraform validate && terraform plan -out=tfplan" } } }
+    stage("Apply (manual)"){ when { expression { return params.ACTION == "apply" } } steps { input message: "Apply Terraform changes to EKS?", ok: "Apply"; withEnv(["AWS_DEFAULT_REGION=${params.AWS_REGION}"]) { sh "cd day48-eks-cluster-terraform/infra && terraform apply -auto-approve tfplan || terraform apply" } } }
+    stage("Destroy (manual)"){ when { expression { return params.ACTION == "destroy" } } steps { input message: "Destroy EKS + VPC resources?", ok: "Destroy"; withEnv(["AWS_DEFAULT_REGION=${params.AWS_REGION}"]) { sh "cd day48-eks-cluster-terraform/infra && terraform destroy -auto-approve || terraform destroy" } } }
+  }
+  post { always { cleanWs() } }
+}

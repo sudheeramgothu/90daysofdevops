@@ -1,0 +1,10 @@
+variable "name" { type=string, default="day48" }
+variable "region" { type=string, default="us-east-1" }
+variable "vpc_cidr" { type=string, default="10.0.0.0/16" }
+variable "az_count" { type=number, default=3 }
+variable "cluster_name" { type=string, default="day48-eks" }
+variable "cluster_version" { type=string, default="1.30" }
+variable "instance_types" { type=list(string), default=["t3.medium"] }
+variable "node_group_desired" { type=number, default=2 }
+variable "node_group_min" { type=number, default=1 }
+variable "node_group_max" { type=number, default=3 }
