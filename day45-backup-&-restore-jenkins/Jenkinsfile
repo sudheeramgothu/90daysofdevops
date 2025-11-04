@@ -1,0 +1,34 @@
+pipeline {
+  agent any
+  parameters {
+    choice(name:'ACTION', choices:['backup','verify','prune','restore'])
+    string(name:'JENKINS_HOME_PATH', defaultValue:'/var/jenkins_home')
+    string(name:'BACKUP_DIR', defaultValue:'day45-backup-restore-jenkins/backups')
+    string(name:'S3_BUCKET', defaultValue:'')
+    string(name:'S3_PREFIX', defaultValue:'jenkins/backups')
+    string(name:'RETENTION_DAYS', defaultValue:'14')
+    booleanParam(name:'VERIFY_BACKUP', defaultValue:true)
+    string(name:'RESTORE_ARCHIVE', defaultValue:'')
+    string(name:'RESTORE_TARGET', defaultValue:'day45-backup-restore-jenkins/restore-target')
+  }
+  environment { SCRIPTS='day45-backup-restore-jenkins/scripts' }
+  stages {
+    stage('Run'){
+      steps {
+        sh 'mkdir -p ${BACKUP_DIR}'
+        script {
+          if (params.ACTION=='backup') {
+            sh 'bash ${SCRIPTS}/backup_jenkins.sh "${JENKINS_HOME_PATH}" "${BACKUP_DIR}" "${S3_BUCKET}" "${S3_PREFIX}"'
+            if (params.VERIFY_BACKUP) { sh 'bash ${SCRIPTS}/verify_backup.sh "${BACKUP_DIR}"' }
+          } else if (params.ACTION=='verify') {
+            sh 'bash ${SCRIPTS}/verify_backup.sh "${BACKUP_DIR}"'
+          } else if (params.ACTION=='prune') {
+            sh 'bash ${SCRIPTS}/prune_backups.sh "${BACKUP_DIR}" "${RETENTION_DAYS}"'
+          } else if (params.ACTION=='restore') {
+            sh 'bash ${SCRIPTS}/restore_jenkins.sh "${BACKUP_DIR}" "${RESTORE_ARCHIVE}" "${RESTORE_TARGET}" "${S3_BUCKET}" "${S3_PREFIX}"'
+          }
+        }
+      }
+    }
+  }
+}
