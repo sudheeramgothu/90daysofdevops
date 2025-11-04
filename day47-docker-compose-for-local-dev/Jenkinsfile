@@ -1,0 +1,11 @@
+pipeline {
+  agent { label 'docker-agent' }
+  options { timestamps(); ansiColor('xterm'); timeout(time: 25, unit: 'MINUTES') }
+  stages {
+    stage('Checkout'){ steps{ checkout scm; sh 'docker version || true' } }
+    stage('Compose Up'){ steps{ sh 'docker compose -f day47-docker-compose-local-dev/docker-compose.yml up -d --build' } }
+    stage('Smoke Tests'){ steps{ sh 'cd day47-docker-compose-local-dev && bash scripts/smoke_test.sh' } }
+    stage('Archive Logs'){ steps{ sh 'docker compose -f day47-docker-compose-local-dev/docker-compose.yml logs > day47-docker-compose-local-dev/compose.log || true'; archiveArtifacts artifacts: 'day47-docker-compose-local-dev/compose.log', fingerprint: true, allowEmptyArchive: true } }
+  }
+  post { always { sh 'docker compose -f day47-docker-compose-local-dev/docker-compose.yml down -v --remove-orphans || true'; cleanWs() } }
+}
