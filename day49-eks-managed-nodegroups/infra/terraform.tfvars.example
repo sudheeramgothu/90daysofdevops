@@ -1,0 +1,15 @@
+region="us-east-1"
+name="day49"
+vpc_cidr="10.2.0.0/16"
+az_count=3
+cluster_name="day49-eks"
+cluster_version="1.30"
+ng_ondemand_desired=2
+ng_ondemand_min=1
+ng_ondemand_max=4
+ng_spot_desired=2
+ng_spot_min=1
+ng_spot_max=6
+ng_jobs_desired=0
+ng_jobs_min=0
+ng_jobs_max=2

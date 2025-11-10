@@ -1,0 +1,15 @@
+variable "name" { type=string, default="day49" }
+variable "region" { type=string, default="us-east-1" }
+variable "vpc_cidr" { type=string, default="10.2.0.0/16" }
+variable "az_count" { type=number, default=3 }
+variable "cluster_name" { type=string, default="day49-eks" }
+variable "cluster_version" { type=string, default="1.30" }
+variable "ng_ondemand_desired" { type=number, default=2 }
+variable "ng_ondemand_min" { type=number, default=1 }
+variable "ng_ondemand_max" { type=number, default=4 }
+variable "ng_spot_desired" { type=number, default=2 }
+variable "ng_spot_min" { type=number, default=1 }
+variable "ng_spot_max" { type=number, default=6 }
+variable "ng_jobs_desired" { type=number, default=0 }
+variable "ng_jobs_min" { type=number, default=0 }
+variable "ng_jobs_max" { type=number, default=2 }

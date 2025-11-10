@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-core
+  labels: { app: api-core }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: api-core } }
+  template:
+    metadata: { labels: { app: api-core } }
+    spec:
+      nodeSelector:
+        capacity: "on-demand"
+        workload: "core"
+      containers:
+        - name: http-echo
+          image: ealen/echo-server:latest
+          env:
+            - name: LISTEN_ADDR
+              value: ":8080"
+          ports: [{ containerPort: 8080 }]

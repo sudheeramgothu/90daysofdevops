@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-spot
+  labels: { app: web-spot }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: web-spot } }
+  template:
+    metadata: { labels: { app: web-spot } }
+    spec:
+      tolerations:
+        - key: "spotOnly"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
+      nodeSelector:
+        capacity: "spot"
+      containers:
+        - name: nginx
+          image: nginx:1.25-alpine
+          ports: [{ containerPort: 80 }]
