@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "demo-api.fullname" . }}-config
+  labels:
+    {{- include "demo-api.labels" . | nindent 4 }}
+data:
+  APP_ENV: "{{ .Values.config.APP_ENV }}"
+  APP_LOG_LEVEL: "{{ .Values.config.APP_LOG_LEVEL }}"

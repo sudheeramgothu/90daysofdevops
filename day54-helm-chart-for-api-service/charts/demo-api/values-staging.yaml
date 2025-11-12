@@ -1,0 +1,8 @@
+namespace: staging
+ingress:
+  enabled: true
+  hosts:
+    - host: stg-demo.example.com
+      paths:
+        - path: /
+          pathType: Prefix

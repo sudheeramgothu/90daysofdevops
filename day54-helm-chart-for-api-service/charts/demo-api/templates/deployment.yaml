@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "demo-api.fullname" . }}
+  labels:
+    {{- include "demo-api.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/name: {{ include "demo-api.name" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/name: {{ include "demo-api.name" . }}
+    spec:
+      serviceAccountName: {{ include "demo-api.fullname" . }}
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports: [ { name: http, containerPort: {{ .Values.service.targetPort }} } ]
+          env: {{- toYaml .Values.env | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "demo-api.fullname" . }}-config
+          readinessProbe: { httpGet: { path: {{ .Values.readinessProbe.path }}, port: {{ .Values.readinessProbe.port }} }, initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }} }
+          livenessProbe:  { httpGet: { path: {{ .Values.livenessProbe.path }},  port: {{ .Values.livenessProbe.port }}  }, initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }} }
+          resources: {{- toYaml .Values.resources | nindent 12 }}

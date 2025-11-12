@@ -1,0 +1,28 @@
+replicaCount: 2
+image:
+  repository: ealen/echo-server
+  tag: latest
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+ingress:
+  enabled: false
+  className: alb
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+  hosts: []
+resources:
+  requests: { cpu: 100m, memory: 128Mi }
+  limits: { cpu: 500m, memory: 256Mi }
+readinessProbe: { path: "/", port: http, initialDelaySeconds: 5 }
+livenessProbe: { path: "/", port: http, initialDelaySeconds: 10 }
+env:
+  - name: LISTEN_ADDR
+    value: ":8080"
+config: { APP_ENV: base, APP_LOG_LEVEL: info }
+hpa: { enabled: false, minReplicas: 2, maxReplicas: 10, targetCPUUtilizationPercentage: 50 }

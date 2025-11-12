@@ -1,0 +1,15 @@
+namespace: production
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:REGION:ACCOUNT:certificate/REPLACE_ME
+  hosts:
+    - host: demo.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+hpa: { enabled: true, minReplicas: 3, maxReplicas: 10, targetCPUUtilizationPercentage: 60 }
