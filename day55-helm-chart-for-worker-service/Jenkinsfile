@@ -1,0 +1,8 @@
+pipeline {
+  agent { label 'docker-agent' }
+  options { timestamps(); ansiColor('xterm'); timeout(time: 25, unit: 'MINUTES') }
+  parameters { choice(name: 'ENV_NAME', choices: ['staging','prod']); string(name: 'RELEASE', defaultValue: 'demo-worker'); string(name: 'NAMESPACE', defaultValue: ''); string(name: 'CHART_PATH', defaultValue: 'day55-helm-worker-chart/charts/demo-worker'); string(name: 'IMAGE', defaultValue: ''); string(name: 'KUBE_CONTEXT', defaultValue: '') }
+  environment { VALUES_STG = 'day55-helm-worker-chart/charts/demo-worker/values-staging.yaml'; VALUES_PROD = 'day55-helm-worker-chart/charts/demo-worker/values-prod.yaml' }
+  stages { stage('Checkout'){ steps { checkout scm } } stage('Select Context'){ when { expression { return params.KUBE_CONTEXT?.trim() } } steps { sh 'kubectl config use-context "${KUBE_CONTEXT}"' } } stage('Helm Lint & Template'){ steps { sh 'helm lint ${CHART_PATH} && if [ "${ENV_NAME}" = "staging" ]; then helm template ${RELEASE} ${CHART_PATH} -f ${VALUES_STG}; else helm template ${RELEASE} ${CHART_PATH} -f ${VALUES_PROD}; fi' } } stage('Deploy'){ steps { script { def valuesFile = (params.ENV_NAME == 'staging') ? env.VALUES_STG : env.VALUES_PROD; def nsOverride = params.NAMESPACE?.trim() ? "--namespace ${params.NAMESPACE}" : ""; def setImage = params.IMAGE?.trim() ? "--set image.repository=${params.IMAGE.split(':')[0]} --set image.tag=${params.IMAGE.split(':').length>1?params.IMAGE.split(':')[1]:'latest'}" : ""; sh "helm upgrade --install ${params.RELEASE} ${params.CHART_PATH} -f ${valuesFile} ${nsOverride} ${setImage} --create-namespace" } } } }
+  post { success { echo '✅ Helm deploy ok' } failure { echo '❌ Helm deploy failed' } always { cleanWs() } }
+}

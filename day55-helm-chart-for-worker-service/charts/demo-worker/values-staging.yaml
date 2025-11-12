@@ -1,0 +1,9 @@
+namespace: staging
+worker:
+  mode: deployment
+replicaCount: 2
+env:
+  - name: APP_ENV
+    value: staging
+  - name: QUEUE_URL
+    value: "https://queue.stg.example.com/orders"

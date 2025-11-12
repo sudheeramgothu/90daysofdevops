@@ -1,0 +1,30 @@
+{{- if eq .Values.worker.mode "deployment" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "demo-worker.fullname" . }}
+  labels:
+    {{- include "demo-worker.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/name: {{ include "demo-worker.name" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/name: {{ include "demo-worker.name" . }}
+    spec:
+      serviceAccountName: {{ include "demo-worker.fullname" . }}
+      containers:
+        - name: worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: {{ toYaml .Values.image.command | nindent 10 }}
+          args: {{- if .Values.worker.args }} {{ toYaml .Values.worker.args | nindent 10 }} {{- else }} {{ toYaml .Values.image.defaultArgs | nindent 10 }} {{- end }}
+          env: {{- toYaml .Values.env | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+{{- end }}

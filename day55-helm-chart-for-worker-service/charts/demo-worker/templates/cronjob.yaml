@@ -1,0 +1,28 @@
+{{- if eq .Values.worker.mode "cronjob" }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "demo-worker.fullname" . }}
+  labels:
+    {{- include "demo-worker.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.worker.schedule | quote }}
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: {{ include "demo-worker.fullname" . }}
+          containers:
+            - name: worker
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: {{ toYaml .Values.image.command | nindent 14 }}
+              args: {{- if .Values.worker.args }} {{ toYaml .Values.worker.args | nindent 14 }} {{- else }} {{ toYaml .Values.image.defaultArgs | nindent 14 }} {{- end }}
+              env: {{- toYaml .Values.env | nindent 16 }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+{{- end }}

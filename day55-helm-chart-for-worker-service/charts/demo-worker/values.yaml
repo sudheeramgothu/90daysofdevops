@@ -1,0 +1,31 @@
+worker:
+  mode: deployment
+  schedule: "*/5 * * * *"
+  args: []
+replicaCount: 2
+image:
+  repository: busybox
+  tag: latest
+  pullPolicy: IfNotPresent
+  command: ["/bin/sh","-c"]
+  defaultArgs:
+    - |
+      echo "Starting demo worker...";
+      while true; do
+        date;
+        echo "QUEUE_URL=${QUEUE_URL:-unset} | ENV=${APP_ENV:-base}";
+        sleep 10;
+      done
+env:
+  - name: APP_ENV
+    value: base
+  - name: QUEUE_URL
+    value: "https://queue.example.com/placeholder"
+resources:
+  requests: { cpu: 100m, memory: 128Mi }
+  limits: { cpu: 500m, memory: 256Mi }
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 60

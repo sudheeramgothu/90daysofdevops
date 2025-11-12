@@ -1,0 +1,5 @@
+apiVersion: v2
+name: demo-worker
+description: Background worker (queue/cron) with optional HPA
+version: 0.1.0
+appVersion: "1.0.0"

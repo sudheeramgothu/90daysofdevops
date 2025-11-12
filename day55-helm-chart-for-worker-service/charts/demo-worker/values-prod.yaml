@@ -1,0 +1,12 @@
+namespace: production
+worker:
+  mode: cronjob
+  schedule: "*/2 * * * *"
+replicaCount: 3
+env:
+  - name: APP_ENV
+    value: production
+  - name: QUEUE_URL
+    value: "https://queue.example.com/orders"
+hpa:
+  enabled: false
