@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namePrefix: stg-
+namespace: staging
+resources:
+  - ../../base
+images:
+  - name: ealen/echo-server
+    newTag: latest
+patches:
+  - target: { kind: Deployment, name: demo-api }
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: APP_VERSION, value: "staging" }
+  - target: { kind: ConfigMap, name: demo-api-config }
+    patch: |-
+      - op: replace
+        path: /data/APP_ENV
+        value: "staging"
