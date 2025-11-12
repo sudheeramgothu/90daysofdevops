@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: logging
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush        1
+        Daemon       off
+        Log_Level    info
+        Parsers_File parsers.conf
+
+    [INPUT]
+        Name              tail
+        Path              /var/log/containers/*.log
+        Exclude_Path      /var/log/containers/fluent-bit*.log
+        Tag               kube.*
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+        DB                /buffers/flb_kube.db
+        DB.Sync           normal
+        Parser            docker
+
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Kube_Tag_Prefix     kube.var.log.containers.
+        Merge_Log           On
+        Keep_Log            Off
+
+    [OUTPUT]
+        Name                cloudwatch_logs
+        Match               kube.*
+        region              ${CW_REGION}
+        log_group_name      ${CW_LOG_GROUP}
+        log_stream_prefix   ${CW_STREAM_PREFIX}
+        auto_create_group   true
+        log_retention_days  ${CW_RETENTION_DAYS}
+  parsers.conf: |
+    [PARSER]
+        Name        docker
+        Format      json
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S
+        Time_Keep   On

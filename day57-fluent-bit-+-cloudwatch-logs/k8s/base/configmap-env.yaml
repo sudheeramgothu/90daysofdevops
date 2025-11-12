@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fb-env
+  namespace: logging
+data:
+  CW_REGION: us-east-1
+  CW_LOG_GROUP: /eks/logging/base
+  CW_STREAM_PREFIX: from-fluentbit-
+  CW_RETENTION_DAYS: "14"
