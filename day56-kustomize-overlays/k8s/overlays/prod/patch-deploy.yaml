@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-api
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+        - name: api
+          resources:
+            requests: { cpu: "300m", memory: "384Mi" }
+            limits:   { cpu: "1000m", memory: "768Mi" }
+          env:
+            - name: ENABLE_TRACING
+              value: "true"

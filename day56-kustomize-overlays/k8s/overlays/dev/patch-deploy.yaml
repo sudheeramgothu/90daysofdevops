@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-api
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: api
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits:   { cpu: "300m", memory: "256Mi" }
+          env:
+            - name: EXTRA_FLAG
+              value: "feature-x=true"

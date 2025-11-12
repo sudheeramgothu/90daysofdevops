@@ -1,0 +1,13 @@
+pipeline {
+  agent { label 'docker-agent' }
+  options { timestamps(); ansiColor('xterm'); timeout(time: 20, unit: 'MINUTES') }
+  parameters { choice(name: 'ENV_NAME', choices: ['dev','staging','prod']); string(name: 'KUBE_CONTEXT', defaultValue: '') }
+  environment { SCRIPTS = 'day56-kustomize-overlays/scripts' }
+  stages {
+    stage('Checkout'){ steps { checkout scm } }
+    stage('Select Context'){ when { expression { return params.KUBE_CONTEXT?.trim() } } steps { sh 'kubectl config use-context "${KUBE_CONTEXT}"' } }
+    stage('Render'){ steps { sh 'bash ${SCRIPTS}/render.sh ${ENV_NAME} | tee manifest.out' } }
+    stage('Deploy'){ steps { sh 'bash ${SCRIPTS}/deploy.sh ${ENV_NAME}' } }
+  }
+  post { always { cleanWs() } }
+}
