@@ -1,0 +1,20 @@
+pipeline {
+  agent { label 'docker-agent' }
+  options { timestamps(); ansiColor('xterm'); timeout(time: 25, unit: 'MINUTES') }
+  parameters { choice(name: 'ACTION', choices: ['deploy','start_load','stop_load']); string(name: 'KUBE_CONTEXT', defaultValue: '') }
+  environment { SCRIPTS = 'day53-horizontal-pod-autoscaler/scripts' }
+  stages {
+    stage('Checkout'){ steps { checkout scm } }
+    stage('Select Context'){ when { expression { return params.KUBE_CONTEXT?.trim() } } steps { sh 'kubectl config use-context "${KUBE_CONTEXT}"' } }
+    stage('Run'){
+      steps {
+        script {
+          if (params.ACTION == 'deploy') { sh 'bash ${SCRIPTS}/deploy.sh' }
+          else if (params.ACTION == 'start_load') { sh 'bash ${SCRIPTS}/start_load.sh' }
+          else { sh 'bash ${SCRIPTS}/stop_load.sh' }
+        }
+      }
+    }
+  }
+  post { always { cleanWs() } }
+}

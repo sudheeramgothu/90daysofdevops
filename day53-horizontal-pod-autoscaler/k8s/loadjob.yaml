@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hpa-load
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: wrk
+          image: curlimages/curl:8.8.0
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              for i in $(seq 1 1200); do
+                curl -s -m 2 http://hpa-demo/ > /dev/null || true;
+              done;
