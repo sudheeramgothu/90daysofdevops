@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namePrefix: stg-
+namespace: staging
+resources:
+  - ../../base
+patches:
+  - target: { kind: ConfigMap, name: app-settings }
+    patch: |-
+      - op: replace
+        path: /data/APP_ENV
+        value: "staging"
+      - op: replace
+        path: /data/APP_LOG_LEVEL
+        value: "debug"
+  - target: { kind: Secret, name: app-secrets }
+    patch: |-
+      - op: replace
+        path: /data/DB_USER
+        value: c3RhZ2luZ19hcHA=
+      - op: replace
+        path: /data/DB_PASS
+        value: c3RhZ2luZ19wYXNz
