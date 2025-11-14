@@ -1,0 +1,12 @@
+pipeline {
+  agent { label 'docker-agent' }
+  options { timestamps(); ansiColor('xterm'); timeout(time: 15, unit: 'MINUTES') }
+  parameters { choice(name: 'ACTION', choices: ['apply','delete']); string(name: 'KUBE_CONTEXT', defaultValue: '') }
+  environment { SCRIPTS = 'day59-grafana-dashboards/scripts' }
+  stages {
+    stage('Checkout'){ steps { checkout scm } }
+    stage('Select Context'){ when { expression { return params.KUBE_CONTEXT?.trim() } } steps { sh 'kubectl config use-context "${KUBE_CONTEXT}"' } }
+    stage('Run'){ steps { sh 'bash ${SCRIPTS}/'+(params.ACTION=='apply'?'apply_dashboards.sh':'delete_dashboards.sh') } }
+  }
+  post { always { cleanWs() } }
+}
