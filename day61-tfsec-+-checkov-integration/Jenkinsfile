@@ -1,0 +1,18 @@
+pipeline {
+  agent { label 'docker-agent' }
+  options { timestamps(); ansiColor('xterm'); timeout(time: 15, unit: 'MINUTES') }
+  stages {
+    stage('Checkout'){ steps { checkout scm } }
+    stage('Scan'){
+      steps { sh 'bash day61-tfsec-checkov/scripts/scan.sh' }
+    }
+    stage('Archive Reports'){
+      steps { archiveArtifacts artifacts: 'day61-tfsec-checkov/reports/*', fingerprint: true, onlyIfSuccessful: false }
+    }
+  }
+  post {
+    success { echo "✅ tfsec/checkov passed the quality gate" }
+    failure { echo "❌ Gate failed — see reports/summary.txt" }
+    always  { cleanWs() }
+  }
+}

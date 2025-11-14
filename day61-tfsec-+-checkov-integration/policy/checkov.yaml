@@ -1,0 +1,2 @@
+framework: terraform
+soft-fail: false
