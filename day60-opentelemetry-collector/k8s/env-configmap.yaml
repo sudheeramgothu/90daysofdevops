@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-env
+  namespace: observability
+data:
+  AWS_REGION: us-east-1
+  K8S_CLUSTER_NAME: my-eks

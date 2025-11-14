@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: observability
+data:
+  otel-collector-config.yaml: |
+    receivers:
+      otlp:
+        protocols: { http: {}, grpc: {} }
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: 'kubernetes-pods'
+            kubernetes_sd_configs: [{ role: pod }]
+            relabel_configs:
+            - { source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape], action: keep, regex: "true" }
+            - { source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path], action: replace, target_label: __metrics_path__, regex: "(.+)" }
+            - { source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port], action: replace, target_label: __address__, regex: "(.+)", replacement: "$1" }
+      filelog:
+        include: [ /var/log/containers/*.log ]
+        start_at: end
+
+    processors:
+      batch: {}
+      memory_limiter: { check_interval: 2s, limit_percentage: 80, spike_limit_percentage: 25 }
+      attributes:
+        actions: [ { key: k8s.cluster.name, action: upsert, value: ${K8S_CLUSTER_NAME} } ]
+
+    exporters:
+      debug: { verbosity: normal }
+      prometheus: { endpoint: 0.0.0.0:8888 }
+      awsxray: {}
+      awsemf:
+        region: ${AWS_REGION}
+        log_group_name: "/eks/otel/metrics"
+        log_stream_name: "otelcol-${HOSTNAME}"
+        namespace: "EKS/OtelCollector"
+      awscloudwatchlogs:
+        region: ${AWS_REGION}
+        log_group_name: "/eks/otel/logs"
+        log_stream_name: "otelcol-${HOSTNAME}"
+        auto_create_group: true
+
+    extensions:
+      health_check: { endpoint: 0.0.0.0:13133 }
+      zpages: {}
+
+    service:
+      extensions: [health_check, zpages]
+      telemetry: { metrics: { address: 0.0.0.0:8888 } }
+      pipelines:
+        traces:  { receivers: [otlp], processors: [memory_limiter, batch, attributes], exporters: [awsxray, debug] }
+        metrics: { receivers: [otlp, prometheus], processors: [memory_limiter, batch, attributes], exporters: [prometheus, awsemf, debug] }
+        logs:    { receivers: [otlp, filelog], processors: [memory_limiter, batch, attributes], exporters: [awscloudwatchlogs, debug] }

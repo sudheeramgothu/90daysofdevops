@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: observability
+  labels: { app.kubernetes.io/name: otel-collector }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app.kubernetes.io/name: otel-collector } }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: otel-collector }
+    spec:
+      serviceAccountName: otel-collector
+      containers:
+      - name: otel-collector
+        image: otel/opentelemetry-collector-contrib:0.99.0
+        args: ["--config=/conf/otel-collector-config.yaml"]
+        env:
+        - name: AWS_REGION
+          valueFrom: { configMapKeyRef: { name: otel-env, key: AWS_REGION } }
+        - name: K8S_CLUSTER_NAME
+          valueFrom: { configMapKeyRef: { name: otel-env, key: K8S_CLUSTER_NAME } }
+        ports:
+        - { containerPort: 4317 } # otlp-grpc
+        - { containerPort: 4318 } # otlp-http
+        - { containerPort: 8888 } # metrics
+        - { containerPort: 13133 } # health
+        volumeMounts:
+        - { name: config, mountPath: /conf }
+        - { name: varlog, mountPath: /var/log, readOnly: true }
+        resources: { requests: { cpu: "250m", memory: "256Mi" }, limits: { cpu: "1000m", memory: "512Mi" } }
+      volumes:
+      - name: config
+        configMap: { name: otel-collector-config, items: [ { key: otel-collector-config.yaml, path: otel-collector-config.yaml } ] }
+      - name: varlog
+        hostPath: { path: /var/log }
