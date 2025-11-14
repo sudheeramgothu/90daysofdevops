@@ -1,0 +1,24 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: custom-slo-rules
+  namespace: monitoring
+spec:
+  groups:
+    - name: availability.rules
+      rules:
+        - alert: HighErrorRate
+          expr: |
+            sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
+          for: 10m
+          labels: { severity: critical }
+          annotations:
+            summary: "High HTTP 5xx error rate (>5%)"
+            description: "Error rate crossed threshold in the last 10m."
+        - alert: PodRestartTooHigh
+          expr: increase(kube_pod_container_status_restarts_total[10m]) > 3
+          for: 5m
+          labels: { severity: warning }
+          annotations:
+            summary: "Pod restarts > 3 in 10m"
+            description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is restarting frequently."

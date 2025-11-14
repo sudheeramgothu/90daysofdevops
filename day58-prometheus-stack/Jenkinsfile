@@ -1,0 +1,14 @@
+pipeline {
+  agent { label 'docker-agent' }
+  options { timestamps(); ansiColor('xterm'); timeout(time: 30, unit: 'MINUTES') }
+  parameters { choice(name: 'ENV_NAME', choices: ['staging','prod']); string(name: 'KUBE_CONTEXT', defaultValue: '') }
+  environment { SCRIPTS = 'day58-prometheus-stack/scripts' }
+  stages {
+    stage('Checkout'){ steps { checkout scm } }
+    stage('Select Context'){ when { expression { return params.KUBE_CONTEXT?.trim() } } steps { sh 'kubectl config use-context "${KUBE_CONTEXT}"' } }
+    stage('Helm Repo'){ steps { sh 'bash ${SCRIPTS}/add_repo.sh' } }
+    stage('Deploy'){ steps { sh 'bash ${SCRIPTS}/deploy.sh ${ENV_NAME}' } }
+    stage('Show Grafana Admin PW'){ steps { sh 'bash ${SCRIPTS}/get_admin_pw.sh' } }
+  }
+  post { always { cleanWs() } }
+}

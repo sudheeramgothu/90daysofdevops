@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: demo-worker
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames: ["default"]
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: demo-worker
+  podMetricsEndpoints:
+    - port: http-metrics
+      path: /metrics
+      interval: 30s

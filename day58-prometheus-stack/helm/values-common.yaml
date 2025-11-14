@@ -1,0 +1,17 @@
+fullnameOverride: kp-stack
+prometheus:
+  prometheusSpec:
+    evaluationInterval: 30s
+    scrapeInterval: 30s
+    retention: 15d
+    ruleSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+grafana:
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  service:
+    type: ClusterIP
