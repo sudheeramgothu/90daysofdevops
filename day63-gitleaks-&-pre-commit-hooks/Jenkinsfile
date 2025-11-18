@@ -1,0 +1,7 @@
+pipeline {
+  agent { label 'docker-agent' }
+  stages {
+    stage('Checkout'){ steps { checkout scm } }
+    stage('Gitleaks Scan'){ steps { sh 'bash day63-gitleaks/scripts/scan.sh' } }
+  }
+}

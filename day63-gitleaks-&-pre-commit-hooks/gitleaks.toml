@@ -1,0 +1,10 @@
+title = "DevOps Ninja Gitleaks Config"
+[report]
+path = "day63-gitleaks/reports/gitleaks.json"
+format = "json"
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key ID"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["key","AWS"]
