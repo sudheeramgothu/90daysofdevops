@@ -1,16 +1,8 @@
 # Day 64 — IAM Least Privilege
 
-## 📖 Overview
-Today’s focus: **IAM Least Privilege**.
+This module teaches AWS IAM least privilege by comparing **bad** (over-permissive) and **good** IAM policies.
 
-## 🎯 Learning Goals
-- Understand the fundamentals of IAM Least Privilege.
-- Work through hands-on examples.
-
-## 🛠️ Tasks
-1. Read the lesson notes here.
-2. Run provided examples or write your own scripts/config.
-3. Commit progress with message: `day64: IAM Least Privilege`.
-
-## 💡 Challenge
-- Extend today’s exercise with an extra feature or edge case.
+Includes:
+- Example IAM policies
+- A policy validator that flags wildcards
+- Jenkins pipeline to enforce least privilege

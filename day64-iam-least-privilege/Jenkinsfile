@@ -1,0 +1,15 @@
+
+pipeline {
+  agent any
+  stages {
+    stage('Validate IAM Policies') {
+      steps {
+        sh 'python3 day64-iam-least-privilege/scripts/validate.py day64-iam-least-privilege/examples/*.json'
+      }
+    }
+  }
+  post {
+    success { echo "IAM Least Privilege: Passed" }
+    failure { echo "IAM Least Privilege: Failed" }
+  }
+}
