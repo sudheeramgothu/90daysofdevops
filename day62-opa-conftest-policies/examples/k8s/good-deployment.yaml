@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: good-api
+spec:
+  selector: { matchLabels: { app: good-api } }
+  template:
+    metadata: { labels: { app: good-api } }
+    spec:
+      containers:
+        - name: api
+          image: nginx:1.25.3
+          resources:
+            limits: { cpu: "500m", memory: "256Mi" }

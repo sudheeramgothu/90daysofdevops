@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bad-api
+spec:
+  selector: { matchLabels: { app: bad-api } }
+  template:
+    metadata: { labels: { app: bad-api } }
+    spec:
+      containers:
+        - name: api
+          image: nginx:latest
+          securityContext: { privileged: true }

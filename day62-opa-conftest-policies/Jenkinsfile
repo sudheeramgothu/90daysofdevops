@@ -1,0 +1,19 @@
+pipeline {
+  agent { label 'docker-agent' }
+  options { timestamps(); ansiColor('xterm'); timeout(time: 10, unit: 'MINUTES') }
+  stages {
+    stage('Checkout'){ steps { checkout scm } }
+    stage('Conftest Gate'){ steps { sh 'bash day62-opa-conftest/scripts/gate.sh' } }
+    stage('Archive & JUnit'){
+      steps {
+        archiveArtifacts artifacts: 'day62-opa-conftest/reports/*', onlyIfSuccessful: false
+        junit 'day62-opa-conftest/reports/*-junit.xml'
+      }
+    }
+  }
+  post {
+    success { echo "✅ Policies passed" }
+    failure { echo "❌ Policy violations found" }
+    always  { cleanWs() }
+  }
+}
